@@ -1,0 +1,1 @@
+{"dataset":{"license":"apache-2.0","lineage":{"documented":true},"retention_days":365},"deployment":{"region":"us-east-1","target":"production"},"model":{"base_model":{"approved":true,"name":"llama-3-70b"},"card":{"exists":true},"data":{"pii_handling":"redacted"},"evaluations":{"bias_score":0.91,"suite_complete":true}}}

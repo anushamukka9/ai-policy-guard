@@ -1,0 +1,46 @@
+apiVersion: policyguard.ai/v1
+kind: ModelGovernancePolicy
+metadata:
+  name: production-llm-governance
+  description: Baseline governance gates for production LLM deployments
+spec:
+  rules:
+    - id: model-card-required
+      description: Every production model must ship a model card
+      severity: block
+      assert:
+        path: model.card.exists
+        equals: true
+      remediation: Add model/card.md following the template in docs/.
+
+    - id: eval-suite-complete
+      description: Core evaluation suite must be fully executed
+      severity: block
+      assert:
+        path: model.evaluations.suite_complete
+        equals: true
+      remediation: Run `make eval` and attach results to the model registry entry.
+
+    - id: bias-score-threshold
+      description: Bias score must meet the organizational bar (>= 0.85)
+      severity: block
+      assert:
+        path: model.evaluations.bias_score
+        gte: 0.85
+      remediation: Re-run bias probes; do not promote models below threshold.
+
+    - id: pii-handling-declared
+      description: PII handling strategy must be declared
+      severity: block
+      assert:
+        path: model.data.pii_handling
+        in: [redacted, encrypted, none-present]
+      remediation: Document PII handling in the data section of the model card.
+
+    - id: approved-base-model
+      description: Fine-tunes must derive from an approved base model
+      severity: warn
+      assert:
+        path: model.base_model.approved
+        equals: true
+      remediation: Request base-model approval from the AI governance board.

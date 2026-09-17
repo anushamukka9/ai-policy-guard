@@ -1,0 +1,30 @@
+apiVersion: policyguard.ai/v1
+kind: DataLineagePolicy
+metadata:
+  name: dataset-lineage
+  description: Dataset provenance and licensing gates
+spec:
+  rules:
+    - id: dataset-license-allowed
+      description: Training datasets must carry an approved license
+      severity: block
+      assert:
+        path: dataset.license
+        in: [apache-2.0, mit, cc-by-4.0, proprietary-approved]
+      remediation: Replace or re-license datasets with unapproved terms.
+
+    - id: lineage-documented
+      description: Full data lineage must be documented
+      severity: block
+      assert:
+        path: dataset.lineage.documented
+        equals: true
+      remediation: Fill in dataset lineage (sources, transforms, versions).
+
+    - id: retention-policy-set
+      description: Data retention window must be declared
+      severity: warn
+      assert:
+        path: dataset.retention_days
+        exists: true
+      remediation: Declare retention_days in the dataset descriptor.
