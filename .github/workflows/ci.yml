@@ -9,5 +9,9 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
+      - run: ruff check src tests examples
       - run: pytest -q
       - run: python examples/quickstart.py
+      - run: python examples/inference_guard.py
+      - run: python examples/run_policy_tests.py
+      - run: policy-guard validate --policy policies/examples
