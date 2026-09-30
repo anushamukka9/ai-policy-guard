@@ -1,0 +1,66 @@
+apiVersion: policyguard.ai/v1
+kind: InferenceGuardPolicy
+metadata:
+  name: inference-guard
+  description: Inference-time enforcement for a customer-facing assistant
+spec:
+  rules:
+    - id: block-secret-leak
+      description: Model output must never contain API keys
+      effect: deny
+      assert:
+        path: response.text
+        matches: "sk-[A-Za-z0-9]{20,}"
+      remediation: Rotate the exposed key and review the retrieval context.
+
+    - id: block-prompt-injection
+      description: Refuse known prompt-injection phrasing in user input
+      effect: deny
+      assert:
+        path: request.prompt
+        matches: "(?i)ignore (all )?previous instructions"
+      remediation: Strip the injection attempt before retrying.
+
+    - id: redact-emails-in-request
+      description: Scrub email addresses from prompts before they reach the model
+      effect: redact
+      assert:
+        path: request.prompt
+        matches: "[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\\.[A-Za-z0-9-.]+"
+      redact_fields: [request.prompt]
+      redact_pattern: "[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\\.[A-Za-z0-9-.]+"
+
+    - id: redact-emails-in-response
+      description: Scrub email addresses from model output before it reaches the user
+      effect: redact
+      assert:
+        path: response.text
+        matches: "[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\\.[A-Za-z0-9-.]+"
+      redact_fields: [response.text]
+      redact_pattern: "[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\\.[A-Za-z0-9-.]+"
+
+    - id: free-tier-rate-limit
+      description: Free-tier callers are limited to 5 requests per minute
+      effect: rate-limit
+      assert:
+        path: request.user.tier
+        equals: free
+      rate_limit:
+        limit: 5
+        window_seconds: 60
+        key_path: request.user.id
+
+    - id: high-risk-action-approval
+      description: High-risk tool actions need a human in the loop
+      effect: require-approval
+      assert:
+        path: request.action.risk
+        equals: high
+      remediation: Route the action to the on-call reviewer queue.
+
+    - id: warn-unreviewed-model
+      description: Flag traffic served by a model that has not finished review
+      severity: warn
+      assert:
+        path: request.model.reviewed
+        equals: true
