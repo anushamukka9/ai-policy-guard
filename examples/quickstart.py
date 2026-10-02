@@ -1,6 +1,5 @@
 """Quickstart: evaluate a model descriptor against the example policies."""
 
-import json
 from pathlib import Path
 
 from policy_guard.engine import PolicyEngine
